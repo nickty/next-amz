@@ -1,14 +1,14 @@
-import { create } from 'zustand'
-import { round2 } from '../utils'
-import { OrderItem } from '../models/OrderMedel'
+import { create } from "zustand";
+import { round2 } from "../utils";
+import { OrderItem } from "../models/OrderMedel";
 
 type Cart = {
-  items: OrderItem[]
-  itemsPrice: number
-  taxPrice: number
-  shippingPrice: number
-  totalPrice: number
-}
+  items: OrderItem[];
+  itemsPrice: number;
+  taxPrice: number;
+  shippingPrice: number;
+  totalPrice: number;
+};
 
 const initialState: Cart = {
   items: [],
@@ -16,12 +16,13 @@ const initialState: Cart = {
   taxPrice: 0,
   shippingPrice: 0,
   totalPrice: 0,
-}
+};
 
-export const cartStore = create<Cart>(() => initialState)
+export const cartStore = create<Cart>(() => initialState);
 
 export default function useCartService() {
-  const { items, itemsPrice, taxPrice, shippingPrice, totalPrice } = cartStore()
+  const { items, itemsPrice, taxPrice, shippingPrice, totalPrice } =
+    cartStore();
   return {
     items,
     itemsPrice,
@@ -29,23 +30,43 @@ export default function useCartService() {
     shippingPrice,
     totalPrice,
     increase: (item: OrderItem) => {
-      const exist = items.find((x) => x.slug === item.slug)
+      const exist = items.find((x) => x.slug === item.slug);
       const updatedCartItem = exist
         ? items.map((x) =>
             x.slug === item.slug ? { ...exist, qty: exist.qty + 1 } : x
           )
-        : [...items, { ...item, qty: 1 }]
+        : [...items, { ...item, qty: 1 }];
       const { itemsPrice, shippingPrice, taxPrice, totalPrice } =
-        calcPrice(updatedCartItem)
+        calcPrice(updatedCartItem);
       cartStore.setState({
         items: updatedCartItem,
         itemsPrice,
         shippingPrice,
         taxPrice,
         totalPrice,
-      })
+      });
     },
-  }
+    decrease: (item: OrderItem) => {
+      const exist = items.find((x) => x.slug === item.slug);
+      if (!exist) return;
+      const updatedCartItems =
+        exist.qty === 1
+          ? items.filter((x: OrderItem) => x.slug !== item.slug)
+          : items.map((x) =>
+              item.slug ? { ...exist, qty: exist.qty - 1 } : x
+            );
+      const { itemsPrice, shippingPrice, taxPrice, totalPrice } =
+        calcPrice(updatedCartItems);
+
+      cartStore.setState({
+        items: updatedCartItems,
+        itemsPrice,
+        shippingPrice,
+        taxPrice,
+        totalPrice,
+      });
+    },
+  };
 }
 
 const calcPrice = (items: OrderItem[]) => {
@@ -54,7 +75,7 @@ const calcPrice = (items: OrderItem[]) => {
     ),
     shippingPrice = round2(itemsPrice > 100 ? 0 : 100),
     taxPrice = round2(Number(0.15 * itemsPrice)),
-    totalPrice = round2(itemsPrice + shippingPrice + taxPrice)
+    totalPrice = round2(itemsPrice + shippingPrice + taxPrice);
 
-  return { itemsPrice, shippingPrice, taxPrice, totalPrice }
-}
+  return { itemsPrice, shippingPrice, taxPrice, totalPrice };
+};
